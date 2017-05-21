@@ -1,0 +1,29 @@
+<!--
+  ~ Copyright (C) 2007 - 2017 by Towerworks Creative GmbH, Zug, Switzerland
+  ~ All Rights Reserved.
+  ~
+  ~ N O T I C E
+  ~
+  ~ THIS MATERIAL IS CONSIDERED A TRADE SECRET OF TOWERWORKS CREATIVE GMBH, ZUG, SWITZERLAND
+  ~ UNAUTHORIZED ACCESS, USE, REPRODUCTION OR DISTRIBUTION IS PROHIBITED.
+  ~
+  ~ Project | Module | File:  allegra2 | allegra2 | extensions.xml
+  ~
+  ~ Last modified by hps on 4/23/17 9:33 AM
+  ~
+  -->
+
+<extensions xmlns="http://maven.apache.org/EXTENSIONS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://maven.apache.org/EXTENSIONS/1.0.0 http://maven.apache.org/xsd/core-extensions-1.0.0.xsd">
+    <extension>
+        <!--<extension>-->
+        <!--<groupId>org.springframework.build</groupId>-->
+        <!--<artifactId>aws-maven</artifactId>-->
+        <!--<version>${spring-build-aws-maven}</version>-->
+        <!--</extension>-->
+        <!--Note: do not use org.springframework.build:aws-maven, it is horribly slow-->
+        <groupId>org.kuali.maven.wagons</groupId>
+        <artifactId>maven-s3-wagon</artifactId>
+        <version>1.2.1</version>
+    </extension>
+</extensions>
