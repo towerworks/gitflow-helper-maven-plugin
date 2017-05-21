@@ -1,5 +1,15 @@
 package com.e_gineering.maven.gitflowhelper;
 
+import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.repository.ArtifactRepositoryFactory;
 import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
@@ -23,23 +33,6 @@ import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.aether.util.repository.AuthenticationBuilder;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 /**
  * Common configuration and plumbing (support methods) for Repository operations on Gitflow Mojo.
  */
@@ -47,6 +40,7 @@ public abstract class AbstractGitflowBasedRepositoryMojo extends AbstractGitflow
 
     private static final Pattern ALT_REPO_SYNTAX_PATTERN = Pattern.compile("(.+)::(.+)::(.+)::(.+)");
 
+    // FIXME: 18.05.17 why required? Only needs to be defined when needed
     @Parameter(property = "releaseDeploymentRepository", required = true)
     protected String releaseDeploymentRepository;
 
@@ -213,7 +207,7 @@ public abstract class AbstractGitflowBasedRepositoryMojo extends AbstractGitflow
         try {
             catalog.delete();
             buildDirectory.mkdirs();
-            writer = new PrintWriter(new OutputStreamWriter(new FileOutputStream(catalog), Charset.forName("UTF-8")));
+            writer = new PrintWriter(new OutputStreamWriter(new FileOutputStream(catalog), Charset.forName("UTF-8")), true);
 
             if (project.getArtifact() != null && project.getArtifact().getFile() != null &&
                     project.getArtifact().getFile().exists() && !project.getArtifact().getFile().isDirectory()) {
@@ -234,6 +228,11 @@ public abstract class AbstractGitflowBasedRepositoryMojo extends AbstractGitflow
                     writer.println(coords);
                 }
             }
+
+            // Add an empty line to ensure the file is not empty, thus taking care of the case that a file-url repo is used
+            // to which empty files do not seem to get uploaded (only md5 and .sha1 files get uploaded). This could maybe
+            // be fixed on the download side....
+            writer.println();
 
             getLog().info("Attaching catalog artifact: " + catalog);
             projectHelper.attachArtifact(project, "txt", "catalog", catalog);
