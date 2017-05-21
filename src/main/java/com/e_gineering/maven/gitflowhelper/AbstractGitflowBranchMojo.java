@@ -1,7 +1,8 @@
 package com.e_gineering.maven.gitflowhelper;
 
-import com.e_gineering.maven.gitflowhelper.properties.ExpansionBuffer;
-import com.e_gineering.maven.gitflowhelper.properties.PropertyResolver;
+import java.io.IOException;
+import java.util.Properties;
+
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -11,13 +12,16 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.scm.manager.ScmManager;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 
-import java.io.IOException;
-import java.util.Properties;
+import com.e_gineering.maven.gitflowhelper.properties.ExpansionBuffer;
+import com.e_gineering.maven.gitflowhelper.properties.PropertyResolver;
 
 /**
  * Abstracts Per-Branch builds & Logging
  */
 public abstract class AbstractGitflowBranchMojo extends AbstractMojo {
+
+    public static final String MASTER_DEFAULT_BRANCH_PATTERN = "(origin/)?master";
+    public static final String SUPPORT_DEFAULT_BRANCH_PATTERN = "(origin/)?support/(.*)";
 
     private Properties systemEnvVars = new Properties();
 
@@ -30,10 +34,10 @@ public abstract class AbstractGitflowBranchMojo extends AbstractMojo {
     @Component
     protected ScmManager scmManager;
 
-    @Parameter(defaultValue = "(origin/)?master", property = "masterBranchPattern", required = true)
+    @Parameter(defaultValue = MASTER_DEFAULT_BRANCH_PATTERN, property = "masterBranchPattern", required = true)
     private String masterBranchPattern;
 
-    @Parameter(defaultValue = "(origin/)?support/(.*)", property = "supportBranchPattern", required = true)
+    @Parameter(defaultValue = SUPPORT_DEFAULT_BRANCH_PATTERN, property = "supportBranchPattern", required = true)
     private String supportBranchPattern;
 
     @Parameter(defaultValue = "(origin/)?release/(.*)", property = "releaseBranchPattern", required = true)
@@ -48,6 +52,9 @@ public abstract class AbstractGitflowBranchMojo extends AbstractMojo {
     // @Parameter tag causes property resolution to fail for patterns containing ${env.}. Default provided in execute();
     @Parameter(property = "gitBranchExpression", required = false)
     private String gitBranchExpression;
+
+    @Parameter(alias = "retainedExecutions", required = false)
+    private String[] retainedExecutions;
 
     protected abstract void execute(final GitBranchType type, final String gitBranch, final String branchPattern) throws MojoExecutionException, MojoFailureException;
 
@@ -108,5 +115,9 @@ public abstract class AbstractGitflowBranchMojo extends AbstractMojo {
         } else {
             logExecute(GitBranchType.UNDEFINED, gitBranch, null);
         }
+    }
+
+    public void setRetainedExecutions(String[] retainedExecutions) {
+        this.retainedExecutions = retainedExecutions;
     }
 }
