@@ -21,11 +21,16 @@ public abstract class ScmUtils {
      * Given the ScmManager for the current execution cycle, and the MavenProject structure, determine the SCM URL or
      * an expression we can resolve the URL from.
      *
-     * @param project    The Current maven Project
-     * @param log        A Log to write to
+     * @param project The Current maven Project
+     * @param log     A Log to write to
      * @return The developerConnection, if none set, the connection, if none set, then the expression, <code>"${env.GIT_URL}"</code>
      */
     public static String resolveUrlOrExpression(final MavenProject project, final Log log) {
+        String answer = resolveUrlOrExpressionImpl(project, log);
+        return answer != null ? answer : DEFAULT_URL_EXPRESSION;
+    }
+
+    static String resolveUrlOrExpressionImpl(final MavenProject project, final Log log) {
         String connectionUrl = null;
 
         // Some projects don't specify SCM Blocks, and instead rely upon the CI server to provide an '${env.GIT_BRANCH}'
@@ -37,8 +42,7 @@ public abstract class ScmUtils {
             }
             return connectionUrl;
         }
-
-        return DEFAULT_URL_EXPRESSION;
+        return null;
     }
 
     /**
@@ -52,23 +56,24 @@ public abstract class ScmUtils {
      * @throws ScmException
      */
     public static String resolveBranchOrExpression(final ScmManager scmManager, final MavenProject project, final Log log) {
-        String connectionUrl = resolveUrlOrExpression(project, log);
+        String connectionUrl = resolveUrlOrExpressionImpl(project, log);
 
-        // If a connectionURL other than the default expression was resolved, try to resolve the branch.
-        if (!StringUtils.equals(connectionUrl, DEFAULT_URL_EXPRESSION)) {
-            try {
-                ScmRepository repository = scmManager.makeScmRepository(connectionUrl);
-                ScmProvider provider = scmManager.getProviderByRepository(repository);
+        try {
+            ScmRepository repository = scmManager.makeScmRepository(connectionUrl != null ? connectionUrl : "scm:git:" + project.getBasedir());
+            ScmProvider provider = scmManager.getProviderByRepository(repository);
 
-                if (GitScmProviderRepository.PROTOCOL_GIT.equals(provider.getScmType())) {
-                    ScmFileSet fileSet = new ScmFileSet(project.getBasedir());
-                    return GitBranchCommand.getCurrentBranch(new ScmLogDispatcher(), (GitScmProviderRepository) repository.getProviderRepository(), fileSet);
-                } else {
-                    log.warn("Project SCM defines a non-git SCM provider. Falling back to  variable resolution.");
-                }
-            } catch (ScmException se) {
-                log.warn("Unable to resolve Git Branch from Project SCM definition.", se);
+            if (GitScmProviderRepository.PROTOCOL_GIT.equals(provider.getScmType())) {
+                ScmFileSet fileSet = new ScmFileSet(project.getBasedir());
+                return GitBranchCommand.getCurrentBranch(new ScmLogDispatcher(), (GitScmProviderRepository) repository.getProviderRepository(), fileSet);
+            } else {
+                log.warn("Project SCM defines a non-git SCM provider. Falling back to  variable resolution.");
             }
+        } catch (ScmException se) {
+            String msg = connectionUrl != null
+                    ? "Unable to resolve Git Branch from Project SCM definition."
+                    : "Unable to resolve Git Branch from Project BaseDir.";
+
+            log.warn(msg, se);
         }
 
         log.debug("Git branch unresolvable from Project SCM definition, defaulting to " + DEFAULT_BRANCH_EXPRESSION);
