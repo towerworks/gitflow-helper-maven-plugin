@@ -50,7 +50,6 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <gitBranchExpression>${git-branch}</gitBranchExpression>
         <maven.version>3.5.0</maven.version>
         <!--<maven.version>3.1.0</maven.version>-->
     </properties>
@@ -261,8 +260,6 @@
                             </execution>
                         </executions>
                         <configuration>
-                            <!--<gitBranchExpression>$${git-branch}</gitBranchExpression>-->
-                            <gitBranchExpression>${git-branch}</gitBranchExpression>
                             <retainedExecutions>
                                 <retainedExecution>compiler:compile@exec005</retainedExecution>
                             </retainedExecutions>

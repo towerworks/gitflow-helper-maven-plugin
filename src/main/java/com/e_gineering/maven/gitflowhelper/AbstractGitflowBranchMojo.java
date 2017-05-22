@@ -50,7 +50,7 @@ public abstract class AbstractGitflowBranchMojo extends AbstractMojo {
     private String developmentBranchPattern;
 
     // @Parameter tag causes property resolution to fail for patterns containing ${env.}. Default provided in execute();
-    @Parameter(property = "gitBranchExpression", required = false)
+    @Parameter(property = "gitBranchExpression", required = false, defaultValue = "${gitBranchExpression}")
     private String gitBranchExpression;
 
     @Parameter(alias = "retainedExecutions", required = false)

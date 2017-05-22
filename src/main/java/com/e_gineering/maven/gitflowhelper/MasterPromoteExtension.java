@@ -229,6 +229,7 @@ public class MasterPromoteExtension extends AbstractMavenLifecycleParticipant {
                     && each.getGoals().contains("promote-master")) {
                 pruneBuild = true;
                 retainedExecutions.add("ch.towerworks:gitflow-helper-maven-plugin:" + GOAL_WILDCARD + "@" + each.getId());
+                retainedExecutions.addAll(extractConfigList("retainedExecutions", "retainedExecution", each.getConfiguration()));
             }
         }
         if (pruneBuild) {
@@ -283,13 +284,9 @@ public class MasterPromoteExtension extends AbstractMavenLifecycleParticipant {
         // FIXME: 20.05.17 memoize global branch config
         // FIXME: 20.05.17 consider using Either to return global branch xor pattern
         String gitBranchExpression = extractConfigValue("gitBranchExpression", configurations, null);
-
         if (gitBranchExpression == null) {
-            logger.debug("Using default branch expression resolver.");
-            gitBranchExpression = ScmUtils.resolveBranchOrExpression(scmManager, project, new DefaultLog(logger));
+            gitBranchExpression = project.getProperties().getProperty("gitBranchExpression");
         }
-        logger.debug("Git Branch Expression: " + gitBranchExpression);
-
         Properties systemEnvVars = null;
         try {
             systemEnvVars = CommandLineUtils.getSystemEnvVars();
@@ -297,13 +294,26 @@ public class MasterPromoteExtension extends AbstractMavenLifecycleParticipant {
             throw new MavenExecutionException("Unable to read System Environment Variables: ", ioe);
         }
         PropertyResolver pr = new PropertyResolver();
+        if (gitBranchExpression == null) {
+            gitBranchExpression = pr.resolveValue("${gitBranchExpression}", project.getProperties(), systemEnvVars);
+        }
+
+        if ("${gitBranchExpression}".equals(gitBranchExpression)) {
+            logger.debug("Using default branch expression resolver.");
+            gitBranchExpression = ScmUtils.resolveBranchOrExpression(scmManager, project, new DefaultLog(logger));
+        }
+        logger.debug("Git Branch Expression: " + gitBranchExpression);
+
         String gitBranch = pr.resolveValue(gitBranchExpression, project.getProperties(), systemEnvVars);
-        logger.info("gitflow-helper-maven-plugin: Build Extension resolved gitBranchExpression: " + gitBranchExpression + " to: " + gitBranch);
+        logger.info("gitflow-helper-maven-plugin: Build Extension resolved gitBranchExpression: " + gitBranchExpression + " to: " + gitBranch + " in project:" + project.getName());
         return gitBranch;
     }
 
     private String extractConfigValue(String parameter, Object[] configurations, String defaultValue) {
         for (Object each : configurations) {
+            if (each == null) {
+                continue;
+            }
             final Xpp3Dom child = ((Xpp3Dom) each).getChild(parameter);
             if (child != null) {
                 return child.getValue();
@@ -315,10 +325,12 @@ public class MasterPromoteExtension extends AbstractMavenLifecycleParticipant {
     private List<String> extractConfigList(String parameterName, String elementName, Object configuration) {
         final ImmutableList.Builder<String> answer = ImmutableList.builder();
 
-        final Xpp3Dom parameter = ((Xpp3Dom) configuration).getChild(parameterName);
-        if (parameter != null) {
-            for (Xpp3Dom each : parameter.getChildren(elementName)) {
-                answer.add(each.getValue());
+        if (configuration != null) {
+            final Xpp3Dom parameter = ((Xpp3Dom) configuration).getChild(parameterName);
+            if (parameter != null) {
+                for (Xpp3Dom each : parameter.getChildren(elementName)) {
+                    answer.add(each.getValue());
+                }
             }
         }
         return answer.build();
